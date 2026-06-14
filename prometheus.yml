@@ -1,0 +1,6 @@
+- name: Deploy Prometheus Stack
+  hosts: all
+  become: true
+
+  roles:
+    - prometheus

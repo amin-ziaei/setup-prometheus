@@ -1,0 +1,2 @@
+[all]
+prometheus_host ansible_host=172.16.67.130 ansible_user=amin ansible_password=12341384 ansible_become=true ansible_become_method=sudo ansible_become_password=12341384 ansible_ssh_common_args='-o StrictHostKeyChecking=no'

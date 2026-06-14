@@ -1,0 +1,100 @@
+- name: Check if Docker is installed
+  stat:
+    path: /usr/bin/docker
+  register: docker_check
+
+- name: Install prerequisites
+  apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+    update_cache: yes
+  when: not docker_check.stat.exists
+
+- name: Create keyrings directory
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+  when: not docker_check.stat.exists
+
+- name: Add Docker GPG key
+  get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "0644"
+  when: not docker_check.stat.exists
+
+- name: Get dpkg architecture
+  command: dpkg --print-architecture
+  register: dpkg_arch
+  changed_when: false
+  when: not docker_check.stat.exists
+
+- name: Add Docker repo
+  copy:
+    dest: /etc/apt/sources.list.d/docker.sources
+    content: |
+      Types: deb
+      URIs: https://download.docker.com/linux/ubuntu
+      Suites: {{ ansible_facts['lsb']['codename'] | default(ansible_facts['distribution_release']) }}
+      Components: stable
+      Architectures: {{ dpkg_arch.stdout }}
+      Signed-By: /etc/apt/keyrings/docker.asc
+  when: not docker_check.stat.exists
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+  when: not docker_check.stat.exists
+
+- name: Install Docker full stack
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+  when: not docker_check.stat.exists
+
+- name: Enable Docker service
+  systemd:
+    name: docker
+    enabled: yes
+    state: started
+  when: not docker_check.stat.exists
+
+- name: Check if Prometheus directory exists
+  stat:
+    path: "{{ prometheus_dir }}"
+  register: prometheus_dir_stat
+
+- name: Create Prometheus directory
+  file:
+    path: "{{ prometheus_dir }}"
+    state: directory
+    mode: "0755"
+  when: not prometheus_dir_stat.stat.exists
+
+- name: Render docker-compose
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ prometheus_dir }}/docker-compose.yml"
+  notify: Restart Prometheus stack
+
+- name: Render prometheus config
+  template:
+    src: prometheus.yml.j2
+    dest: "{{ prometheus_dir }}/prometheus.yml"
+  notify: Restart Prometheus stack
+
+- name: Start Prometheus stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ prometheus_dir }}"
+    state: present
+  ignore_errors: "{{ ansible_check_mode }}"
+

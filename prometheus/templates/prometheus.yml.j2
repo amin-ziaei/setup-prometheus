@@ -1,0 +1,28 @@
+global:
+  scrape_interval: {{ scrape_interval }}
+
+scrape_configs:
+
+{% for job in jobs %}
+  - job_name: "{{ job.name }}"
+    http_sd_configs:
+      - url: "{{ netbox_base_url }}{{ job.path }}"
+        refresh_interval: {{ job.refresh_interval }}
+        authorization:
+          type: Bearer
+          credentials: "{{ netbox_token }}"
+
+    relabel_configs:
+      - source_labels: [__meta_netbox_primary_ip4, __meta_netbox_service_port]
+        separator: ":"
+        target_label: __address__
+
+      - source_labels: [__meta_netbox_name]
+        target_label: instance
+
+      - source_labels: [__meta_netbox_site_slug]
+        target_label: site
+
+      - source_labels: [__meta_netbox_services]
+        target_label: services
+{% endfor %}

@@ -1,0 +1,32 @@
+prometheus_dir: /opt/prometheus
+
+prometheus_image: prom/prometheus:latest
+prometheus_port: 9090
+prometheus_retention_time: 30d
+prometheus_retention_size: 10GB
+
+scrape_interval: 15s
+
+netbox_base_url: "http://172.17.0.1:8000"
+netbox_token: "CHANGE_ME"
+
+jobs:
+  - name: nodes-exporter
+    path: /api/plugins/prometheus-sd/virtual-machines/
+    refresh_interval: 600s
+
+  - name: node-exporter
+    path: /api/plugins/prometheus-sd/services/?name=node-exporter
+    refresh_interval: 600s
+
+  - name: redis-exporter
+    path: /api/plugins/prometheus-sd/services/?name=redis-exporter
+    refresh_interval: 600s
+
+  - name: nginx-exporter
+    path: /api/plugins/prometheus-sd/services/?name=nginx-exporter
+    refresh_interval: 600s
+
+  - name: postgres-exporter
+    path: /api/plugins/prometheus-sd/services/?name=postgres-exporter
+    refresh_interval: 600s

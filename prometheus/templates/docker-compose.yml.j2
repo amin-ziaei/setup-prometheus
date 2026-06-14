@@ -1,0 +1,19 @@
+services:
+  prometheus:
+    image: {{ prometheus_image }}
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "{{ prometheus_port }}:9090"
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-lifecycle"
+      - "--storage.tsdb.wal-compression"
+      - "--storage.tsdb.retention.time={{ prometheus_retention_time }}"
+      - "--storage.tsdb.retention.size={{ prometheus_retention_size }}"
+
+volumes:
+  prometheus_data:
